@@ -33,12 +33,3 @@ fn main() {
 
     println!("Result: {}", result);
 }
-
-fn read_input_lines() -> io::Result<Lines<BufReader<File>>>
-{
-    let directory = env::current_dir().unwrap();
-
-    let path = directory.join("input.txt");
-    let file = File::open(path)?;
-    Ok(BufReader::new(file).lines())
-}
