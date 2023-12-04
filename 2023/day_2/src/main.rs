@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::{env, fs::File, io::{BufReader, BufRead}};
+use std::{env, fs::File, io::{BufReader, BufRead, stdin}};
 
 /*
     Trying to incorporate structs and tuples into workflow,
@@ -19,6 +19,8 @@ fn main() {
     let start = std::time::Instant::now();
     println!("Result: {}", solve_part_2());
     eprintln!("Solved in {:?}", start.elapsed());
+
+    let _ = stdin().read_line(&mut String::new()).unwrap();
 }
 
 fn solve_part_2() -> i32{
@@ -40,7 +42,6 @@ fn solve_part_2() -> i32{
 
     return acc;
 }
-
 
 fn solve_part_1() -> i16{
     let bag_contents = Handful(12,13,14);

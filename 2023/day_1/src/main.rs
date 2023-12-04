@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::{fs::File, env, io::{BufReader, BufRead}};
+use std::{fs::File, env, io::{BufReader, BufRead}, time::Instant};
 
 static LEGAL_WORDS: &'static [&str] = &["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
@@ -14,6 +14,8 @@ static LEGAL_WORDS: &'static [&str] = &["one", "two", "three", "four", "five", "
 */
 
 fn main() {
+    let now = Instant::now();
+
     let input = read_input();
     let result: u32 = input.iter()
         .map(|x| 
@@ -21,7 +23,10 @@ fn main() {
              first_digit_or_word(x.chars().rev()))
         .sum();
 
+    let elapsed = now.elapsed();
+
     println!("{}", result);
+    println!("{:?}", elapsed);
 }
 
 fn first_digit(chars: impl Iterator<Item = char>) -> u32 {
