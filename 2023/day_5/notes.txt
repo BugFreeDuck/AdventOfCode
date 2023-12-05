@@ -1,5 +1,0 @@
-last tried answer: 102900316 (too high)
-last tried answer: 102900316 (too high)
----------------------------------------
-u64
-last tried answer: 79004095 (not right)
