@@ -1,94 +1,54 @@
-use std::{env, fs::File, io::{BufReader, BufRead}, collections::HashMap};
+#![allow(dead_code)]
+use std::{env, fs::File, io::{BufReader, BufRead}, collections::HashMap, time::Instant};
 
 fn main() {
-    let input_lines = read_input("test_input.txt");
+    let start_time = Instant::now();
+
+    let input_lines = read_input("input.txt");
     let games = parse_input(input_lines);
-    
     let result = solve_part_2(games);
     
+    println!("Calculated in: {:?}", start_time.elapsed());
     dbg!(result);
 }
 
 fn solve_part_2(games: Vec<(Vec<u8>, Vec<u8>)>) -> u32 {
-    let winning_counts = count_card_matches(&games);
-    let cards_won_by_card = winning_counts.iter().enumerate()
-        .map(|(idx, count)| (idx..idx+(*count as usize)).collect())
+    let cards_matches  = count_card_matches(&games);
+    let cards_won_by_card = cards_matches.iter().enumerate()
+        .map(|(idx, count)| ((idx+1)..idx+(*count as usize) + 1).collect())
         .collect::<Vec<Vec<usize>>>();
 
     let mut memo = HashMap::<usize, u32>::new();
-    let mut result:u32 = winning_counts.len() as u32;
-    for (card_idx, win_count) in winning_counts.iter().enumerate() {
-      result += count_total_winnings(memo, card_idx, &winning_counts);
-    }    
+    let mut result:u32 = cards_matches.len() as u32;
+    for (card_idx, _) in cards_matches.iter().enumerate() {
+        result += count_total_winnings(card_idx, &cards_matches, &cards_won_by_card, &mut memo);
+    }
 
-    
-
-    return 1;
+    return result;
 }
 
-fn count_total_winnings(mut memo: HashMap<usize, u32>, idx: usize, winning_counts: &Vec<u8>) -> u32{
-        
+fn count_total_winnings(
+    idx: usize,
+    cards_matches: &Vec<u8>,
+    cards_won: &Vec<Vec<usize>>,
+    memo: &mut HashMap<usize, u32>) -> u32
+{
     let cached_total = memo.get(&idx);
     if cached_total.is_some(){
         return *cached_total.unwrap();
     } else {
-        
-        let winings = count_total_winnings(, idx, winning_counts)
+        let new_cards = &cards_won[idx];
+        let mut result = new_cards.len() as u32;
+        let winings = new_cards.iter().map(|idx| {
+           let sub_total = count_total_winnings(*idx, &cards_matches, &cards_won, memo);
+           memo.insert(*idx, sub_total);
+           return sub_total;
+        }).sum::<u32>();
 
-        memo.insert(1, 1);
-        return 1;
+        result += winings;
+        memo.insert(idx, result);
+        return result;
     }
-}
-
-
-fn solve_part_2_dp(games: Vec<(Vec<u8>, Vec<u8>)>) -> u32 {
-    let winning_counts = count_card_matches(&games);
-
-    let count_won_by_card = winning_counts.iter().enumerate()
-        .map(|(idx, count)| (idx, *count))
-        .collect::<Vec<(usize, u8)>>();
-
-    let cards_won_by_card = winning_counts.iter().enumerate()
-        .map(|(idx, count)| (idx..idx+(*count as usize)).collect())
-        .collect::<Vec<Vec<usize>>>();
-
-
-    let mut total_won_by_card = HashMap::<usize, u32>::new();
-
-    let mut cards_from_lowest = count_won_by_card.clone();
-    cards_from_lowest.sort_by(|a, b| a.1.cmp(&b.1));
-
-
-    dbg!(&cards_from_lowest);
-
-    let mut acc: u32 = winning_counts.len() as u32;
-    for (card_idx, win_count) in cards_from_lowest.iter() {
-        println!("Current card {}, won {}", card_idx, win_count);
-        dbg!(&total_won_by_card);
-
-        let cached_total = total_won_by_card.get(&card_idx);
-        if(cached_total.is_some()){
-            acc += cached_total.unwrap();
-            continue;
-        }
-
-        let cards_won = &cards_won_by_card[*card_idx];
-        if cards_won.len() == 0 {
-            total_won_by_card.insert(*card_idx, 0);
-            continue;
-        }
-
-        let mut local_acc = 0;
-        for card in cards_won {
-            local_acc += total_won_by_card.get(card).unwrap();
-        }
-
-        total_won_by_card.insert(*card_idx, local_acc);    
-    }    
-
-    
-
-    return 1;
 }
 
 fn solve_part_1(games: Vec<(Vec<u8>, Vec<u8>)>) -> u32 {
