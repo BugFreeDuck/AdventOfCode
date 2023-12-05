@@ -20,12 +20,8 @@ fn solve_part_2(lines: &mut impl Iterator<Item = String>) -> u64 {
         
         let lines_materialized = lines.collect::<Vec<String>>();
         let mut mins = Vec::<u64>::new();
-        for idx in (1..seed_numbers.len()).step_by(2) {
-            println!("Current seed idx from input {}", idx);
-            
-            let mut seeds = (seed_numbers[idx-1]..seed_numbers[idx-1] + seed_numbers[idx]).collect::<Vec<u64>>();
-            println!("from {} to {}",&seeds.iter().min().unwrap(), &seeds.iter().max().unwrap());
-            
+        for idx in (1..seed_numbers.len()).step_by(2) {            
+            let mut seeds = (seed_numbers[idx-1]..seed_numbers[idx-1] + seed_numbers[idx]).collect::<Vec<u64>>();            
             mins.push(apply_almanach(&mut seeds, &mut lines_materialized.clone().into_iter()));
         }
         
@@ -58,7 +54,6 @@ fn apply_almanach(seeds: &mut Vec<u64>, lines: &mut impl Iterator<Item = String>
         }
         
         if line.contains(':'){
-            println!("{}", line);
             continue;
         } else{
             let map_numbers = parse_numbers(&line);
