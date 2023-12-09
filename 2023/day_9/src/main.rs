@@ -8,23 +8,22 @@ fn main() {
     for line in input{
         let initial_numbers = parse_numbers(line);
         let matrix = extrapolate_matrix(initial_numbers);
-
-        result += count_part_2(matrix);
+        
+        let iterator = matrix.iter().rev();
+        result += part_2_calculation(iterator);
     }
 
     println!("Result: {}", result);
 }
 
-fn count_part_2(matrix: Vec<Vec<i64>>) -> i64 {
-    matrix.iter().rev()
-        .map(|numbers| *numbers.first().unwrap())
-        .fold(0, |acc, num| num - acc)
+fn part_1_calculation<'a>(iterator: impl Iterator<Item = &'a Vec<i64>>) -> i64{
+    iterator.map(|numbers| *numbers.last().unwrap())
+    .sum()
 }
 
-fn count_part_1(matrix: Vec<Vec<i64>>) -> i64 {
-    matrix.iter().rev()
-        .map(|numbers| *numbers.last().unwrap())
-        .sum()
+fn part_2_calculation<'a>(iterator: impl Iterator<Item = &'a Vec<i64>>) -> i64{
+    iterator.map(|numbers| *numbers.first().unwrap())
+        .fold(0, |acc, num| num - acc)
 }
 
 fn extrapolate_matrix(initial_numbers: Vec<i64>) -> Vec<Vec<i64>>{
