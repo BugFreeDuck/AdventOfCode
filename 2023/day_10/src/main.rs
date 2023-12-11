@@ -1,10 +1,9 @@
+use core::panic;
 #[allow(dead_code)]
-use std::vec;
 use std::{env, fs::File, io::{BufReader, BufRead}};
-use colored::Colorize;
 
 #[derive(Debug)]
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 #[derive(PartialEq)]
 struct Position{
     x: usize,
@@ -12,6 +11,7 @@ struct Position{
 }
 
 #[derive(Debug)]
+#[derive(Copy, Clone)]
 enum Direction{
     North,
     East,
@@ -20,70 +20,73 @@ enum Direction{
 }
 
 fn main() {
-    let input_iterator = get_input_lines("test_input.txt");
-    
+    let input_iterator = get_input_lines("input.txt");
+
     let matrix = input_iterator
         .map(|line| line.chars().collect::<Vec<char>>())
         .collect::<Vec<Vec<char>>>();
 
-
-    let start_pos = find_start(&matrix).unwrap();    
-    // let path = folow_path(&matrix);
-
-    // dbg!(path);
-    print_matrix(matrix, &start_pos);
-    // println!("Current pos: {:?}", current_pos); 
-
-}
-
-fn folow_path(matrix: &Vec<Vec<char>>) -> Vec<Position> {
     let start_pos = find_start(&matrix).unwrap();
-    let mut current_pos = start_pos.clone();
-    let mut prev_pos: Option<&Position> = None;
+    let mut current_pos = start_pos;
+    let mut next_direction = get_first_direction(&current_pos, &matrix);
+    
+    move_in_direction(&mut current_pos, &next_direction);
+    let mut steps_taken = 1;    
 
-    dbg!(&current_pos);
+    loop{
+        let last_dir = next_direction;
+        next_direction = get_next_direction(&current_pos, &last_dir, &matrix);
+        move_in_direction(&mut current_pos, &next_direction);
 
-    let mut path = Vec::<Position>::new();
-    path.push(current_pos.clone());
-
-    let mut steps_taken: u64 = 0;
-    loop {
-        let new_pos = get_valid_neigbor(&current_pos, prev_pos, matrix);    
-        path.push(new_pos.clone());
-        
-        prev_pos = Some(&current_pos);
-        // current_pos = new_pos.clone();
         steps_taken += 1;
-
-
-        if steps_taken == 10 { break; }
-        if current_pos.eq(&start_pos) { break; }
+        if start_pos == current_pos { break;}
     }
 
-    return path;
+    println!("Result: {}", steps_taken/2);
 }
 
-fn get_valid_neigbor(pos: &Position, prev_pos: Option<&Position>, matrix: &Vec<Vec<char>>) -> Position{
+fn move_in_direction(pos: &mut Position, dir: &Direction){
+    match dir {
+        Direction::North => pos.y = pos.y - 1,
+        Direction::East =>  pos.x = pos.x + 1,
+        Direction::South => pos.y = pos.y + 1,
+        Direction::West =>  pos.x = pos.x - 1
+    };
+}
+
+fn get_next_direction(pos: &Position, last_dir: &Direction, matrix: &Vec<Vec<char>>) -> Direction{
+    let current_char = matrix[pos.y][pos.x];
+
+    return match last_dir {
+        Direction::North => match current_char { 'F' => Direction::East,  '7' => Direction::West,  '|' => Direction::North, _ => panic!() },
+        Direction::South => match current_char { 'L' => Direction::East,  'J' => Direction::West,  '|' => Direction::South, _ => panic!() },
+        Direction::West =>  match current_char { 'F' => Direction::South, 'L' => Direction::North, '-' => Direction::West,  _ => panic!() },
+        Direction::East =>  match current_char { '7' => Direction::South, 'J' => Direction::North, '-' => Direction::East,  _ => panic!() },
+    };
+}
+
+fn get_first_direction(pos: &Position, matrix: &Vec<Vec<char>>) -> Direction
+{
+    let i_x = pos.x as isize;
+    let i_y = pos.y as isize;
     let neighbors = [
-        (Direction::North , matrix_get(pos.x, pos.y - 1, matrix), Position { x: pos.x, y: pos.y - 1}),
-        (Direction::East  , matrix_get(pos.x + 1, pos.y, matrix), Position { x: pos.x + 1, y: pos.y}),
-        (Direction::South , matrix_get(pos.x, pos.y + 1, matrix), Position { x: pos.x, y: pos.y + 1}),
-        (Direction::West  , matrix_get(pos.x - 1, pos.y, matrix), Position { x: pos.x - 1, y: pos.y})
+        (Direction::North , matrix_get(i_x, i_y - 1, matrix)),
+        (Direction::East  , matrix_get(i_x + 1, i_y, matrix)),
+        (Direction::South , matrix_get(i_x, i_y + 1, matrix)),
+        (Direction::West  , matrix_get(i_x - 1, i_y, matrix))
     ];
-   
+
     let pipe_part = neighbors.iter()
-        .find(|(direction, value, next_pos)| {
+        .find(|(direction, value)| {
             if value.is_none() { return false; }
             else{
                 let val = value.unwrap();
-                return !val.eq(&'.') &&
-                    direction_char_compatible(direction, val) &&
-                    (prev_pos.is_some() && prev_pos.unwrap().eq(next_pos))
+                return direction_char_compatible(direction, val);
             }
         })
         .unwrap();
 
-    return pipe_part.2.to_owned();
+    return pipe_part.0;
 }
 
 fn direction_char_compatible(dir: &Direction, char: &char) -> bool{
@@ -95,9 +98,9 @@ fn direction_char_compatible(dir: &Direction, char: &char) -> bool{
     }
 }
 
-fn matrix_get(x: usize, y: usize, matrix: &Vec<Vec<char>>) -> Option<&char>{
-    return match matrix.get(y){
-        Some(row) => row.get(x),
+fn matrix_get(x: isize, y: isize, matrix: &Vec<Vec<char>>) -> Option<&char>{
+    return match matrix.get(y as usize){
+        Some(row) => row.get(x as usize),
         None => None,
     }
 }
@@ -106,7 +109,7 @@ fn find_start(matrix: &Vec<Vec<char>>) -> Option<Position>{
     for (y, row) in matrix.iter().enumerate(){
         for (x, char) in row.iter().enumerate(){
             if char.eq(&'S') {
-                return Some(Position { x, y});
+                return Some(Position { x, y });
             }
         }
     }
@@ -114,28 +117,11 @@ fn find_start(matrix: &Vec<Vec<char>>) -> Option<Position>{
     return None;
 }
 
-fn print_matrix(matrix: Vec<Vec<char>>, current_pos: &Position) {
-    println!("Print matrix:");
-    for (y, row) in matrix.iter().enumerate(){ 
-        for (x, char) in row.iter().enumerate()
-        {
-            if current_pos.x == x && current_pos.y == y {
-                print!("{}", char.to_string().as_str().green());
-            }
-            else {
-                print!("{}", char);
-            }
-        }
-
-        println!("");
-    }
-}
-
 fn get_input_lines(path: &str) -> impl Iterator<Item = String> {
     let dir = env::current_dir().unwrap();
     let file = File::open(dir.join(path)).expect("input file missing");
     let buf = BufReader::new(file);
-    
+
     return buf
         .lines()
         .map(|l| l.expect("Could not parse line"));
